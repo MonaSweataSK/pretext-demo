@@ -18,6 +18,14 @@ export const PretextRow: FC<PretextRowProps> = ({ item, style }) => {
         <div className={styles.text} dir={item.lang === 'ar' ? 'rtl' : 'ltr'}>
           {item.text}
         </div>
+        {item.imageUrl && (
+          <img 
+            src={item.imageUrl} 
+            alt="Attached content" 
+            className={styles.attachedImage} 
+            // Pretext knows nothing about this height! Overlaps/tearing guaranteed.
+          />
+        )}
       </div>
     </div>
   );

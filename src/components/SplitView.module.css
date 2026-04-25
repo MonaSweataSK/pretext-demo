@@ -27,6 +27,7 @@
   height: 48px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 16px;
   border-bottom: 1px solid var(--border-color);
   background-color: rgba(22, 27, 34, 0.8);
@@ -36,6 +37,22 @@
   left: 0;
   right: 0;
   z-index: 5;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statBadge {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
 }
 
 .badge {

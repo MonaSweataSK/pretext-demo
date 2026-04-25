@@ -2,6 +2,7 @@
 
 interface Window {
   __perfLog: {
+    globalLongtaskCount: number;
     domMeasure: {
       avgScrollScriptingMs: number;
       reflowCount: number;

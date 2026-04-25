@@ -5,6 +5,7 @@ export interface Item {
   timestamp: string;
   hasEmoji: boolean;
   lang: 'en' | 'ja' | 'ar';
+  imageUrl?: string;
 }
 
 // Simple LCG PRNG for determinism
@@ -51,7 +52,7 @@ function generateRandomText(lang: 'en' | 'ja' | 'ar'): string {
   return text.join(' ');
 }
 
-export function generateItems(count: number = 1000): Item[] {
+export function generateItems(count: number = 1000, includeImages: boolean = false): Item[] {
   // Reset seed so multiple calls return the same data
   seed = 12345;
   const items: Item[] = [];
@@ -83,13 +84,20 @@ export function generateItems(count: number = 1000): Item[] {
     const date = new Date(currentTime);
     const timestamp = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 
+    let imageUrl;
+    if (includeImages && random() > 0.5) {
+      // Add a random image from picsum
+      imageUrl = `https://picsum.photos/seed/${seed}/400/${Math.floor(random() * 200) + 200}`;
+    }
+
     items.push({
       id: `item-${i}`,
       text,
       username: USERNAMES[Math.floor(random() * USERNAMES.length)],
       timestamp,
       hasEmoji,
-      lang
+      lang,
+      imageUrl
     });
   }
 

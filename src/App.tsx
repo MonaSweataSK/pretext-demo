@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef, useEffect, useState } from 'react';
 import { generateItems } from './data/generateItems';
 import { SplitView } from './components/SplitView';
 import { DomList } from './components/DomList/DomList';
@@ -10,6 +10,7 @@ import styles from './App.module.css';
 // Initialize performance log
 if (typeof window !== 'undefined') {
   window.__perfLog = {
+    globalLongtaskCount: 0,
     domMeasure: {
       avgScrollScriptingMs: 0,
       reflowCount: 0,
@@ -24,16 +25,61 @@ if (typeof window !== 'undefined') {
 }
 
 function App() {
-  const items = useMemo(() => generateItems(1000), []);
+  const [itemCount, setItemCount] = useState(1000);
+  const [showImages, setShowImages] = useState(false);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
+  const [domJumpMs, setDomJumpMs] = useState<number | null>(null);
+  const [pretextJumpMs, setPretextJumpMs] = useState<number | null>(null);
+  const [jumpFlashTimer, setJumpFlashTimer] = useState<number | null>(null);
+
+  const items = useMemo(() => generateItems(itemCount, showImages), [itemCount, showImages]);
   const domListRef = useRef<VirtualListHandle>(null);
   const pretextListRef = useRef<VirtualListHandle>(null);
+  const autoScrollInterval = useRef<number | null>(null);
 
   const handleJump = (index: number) => {
     domListRef.current?.scrollToIndex(index);
     pretextListRef.current?.scrollToIndex(index);
+    
+    requestAnimationFrame(() => {
+      // Fallback: the lists themselves report latency to __perfLog via requestAnimationFrame
+      // We will read it after a small delay
+      setTimeout(() => {
+        setDomJumpMs(Math.round(window.__perfLog.domMeasure.jumpLatencyMs));
+        setPretextJumpMs(Math.round(window.__perfLog.pretext.jumpLatencyMs));
+        
+        if (jumpFlashTimer) clearTimeout(jumpFlashTimer);
+        setJumpFlashTimer(window.setTimeout(() => {
+          setDomJumpMs(null);
+          setPretextJumpMs(null);
+        }, 1500));
+      }, 50);
+    });
   };
 
-  // PerformanceObserver for DOM scripting
+  const toggleAutoScroll = () => {
+    if (isAutoScrolling) {
+      if (autoScrollInterval.current) clearInterval(autoScrollInterval.current);
+      setIsAutoScrolling(false);
+    } else {
+      setIsAutoScrolling(true);
+      autoScrollInterval.current = window.setInterval(() => {
+        // Find scroll containers and scroll them by 8px
+        const containers = document.querySelectorAll(`[style*="overflow-y: scroll"]`);
+        containers.forEach(el => {
+          el.scrollTop += 8;
+        });
+      }, 16);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (autoScrollInterval.current) clearInterval(autoScrollInterval.current);
+    };
+  }, []);
+
+  // PerformanceObserver for DOM scripting and longtasks
   useEffect(() => {
     if (!window.PerformanceObserver) return;
     
@@ -46,14 +92,16 @@ function App() {
           totalScriptingTime += entry.duration;
           entryCount++;
           window.__perfLog.domMeasure.avgScrollScriptingMs = totalScriptingTime / entryCount;
+        } else if (entry.entryType === 'longtask') {
+          window.__perfLog.globalLongtaskCount++;
         }
       }
     });
 
     try {
-      observer.observe({ type: 'event', buffered: true });
+      observer.observe({ entryTypes: ['event', 'longtask'] });
     } catch (e) {
-      console.warn("PerformanceObserver for events not supported");
+      console.warn("PerformanceObserver not supported");
     }
 
     return () => observer.disconnect();
@@ -67,12 +115,56 @@ function App() {
           <p className={styles.subtitle}>DOM getBoundingClientRect vs Pretext Layout Engine</p>
         </div>
         <div className={styles.controls}>
-          <JumpButton targetIndex={750} onJump={handleJump} />
+          {showImages && (
+            <div className={styles.warningBadge} title="Unknown image dimensions invalidate Pretext offsets">
+              ⚠️ Pretext Layout Broken
+            </div>
+          )}
+          
+          <select 
+            className={styles.select} 
+            value={itemCount} 
+            onChange={e => setItemCount(Number(e.target.value))}
+          >
+            <option value={500}>500 items</option>
+            <option value={1000}>1000 items</option>
+            <option value={5000}>5000 items</option>
+          </select>
+
+          <label className={styles.toggleLabel}>
+            <input 
+              type="checkbox" 
+              checked={showImages} 
+              onChange={e => setShowImages(e.target.checked)} 
+            />
+            Show Images
+          </label>
+
+          <button 
+            className={`${styles.logButton} ${isAutoScrolling ? styles.activeButton : ''}`} 
+            onClick={toggleAutoScroll}
+          >
+            {isAutoScrolling ? 'Stop Auto Scroll' : 'Auto Scroll'}
+          </button>
+
+          <JumpButton 
+            targetIndex={Math.floor(itemCount * 0.75)} 
+            onJump={handleJump} 
+            disabled={showImages}
+          />
           <button className={styles.logButton} onClick={() => console.table(window.__perfLog)}>
             Log Perf Stats
           </button>
         </div>
       </header>
+
+      {domJumpMs !== null && pretextJumpMs !== null && (
+        <div className={styles.flashBadgeContainer}>
+          <div className={styles.flashBadge}>
+            DOM: {domJumpMs}ms | Pretext: {pretextJumpMs}ms
+          </div>
+        </div>
+      )}
 
       <main className={styles.main}>
         <SplitView

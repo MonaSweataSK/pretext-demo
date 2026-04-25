@@ -59,3 +59,64 @@
   display: flex;
   justify-content: center;
 }
+
+.warningBadge {
+  background-color: rgba(210, 153, 34, 0.15);
+  color: #d29922;
+  border: 1px solid #d29922;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.select {
+  background-color: var(--panel-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.activeButton {
+  background-color: var(--accent-pretext-dim);
+  border-color: var(--accent-pretext);
+  color: var(--accent-pretext);
+}
+
+.flashBadgeContainer {
+  position: absolute;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  pointer-events: none;
+}
+
+.flashBadge {
+  background-color: rgba(13, 17, 23, 0.9);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  border: 1px solid #58a6ff;
+  box-shadow: 0 8px 24px rgba(88, 166, 255, 0.2);
+  font-size: 16px;
+  font-weight: bold;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}

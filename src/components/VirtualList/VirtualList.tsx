@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useImperativeHandle, forwardRef, type CSSProperties, type ReactNode } from 'react';
+import { useState, useEffect, useRef, useImperativeHandle, forwardRef, type CSSProperties, type ReactNode } from 'react';
 import type { Item } from '../../data/generateItems';
 
 export interface VirtualListProps {
@@ -16,16 +16,15 @@ export const VirtualList = forwardRef<VirtualListHandle, VirtualListProps>(({ it
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
 
-  // Compute cumulative offsets
-  const { totalHeight, offsets } = useMemo(() => {
-    const offsets = new Float64Array(items.length);
-    let currentTotal = 0;
-    for (let i = 0; i < items.length; i++) {
-      offsets[i] = currentTotal;
-      currentTotal += getHeight(i);
-    }
-    return { totalHeight: currentTotal, offsets };
-  }, [items, getHeight]);
+  // Compute cumulative offsets on every render
+  // (necessary because getHeight results can change dynamically via ResizeObserver)
+  const offsets = new Float64Array(items.length);
+  let currentTotal = 0;
+  for (let i = 0; i < items.length; i++) {
+    offsets[i] = currentTotal;
+    currentTotal += getHeight(i);
+  }
+  const totalHeight = currentTotal;
 
   // Handle scroll events directly to avoid React batching delays
   useEffect(() => {
@@ -93,7 +92,8 @@ export const VirtualList = forwardRef<VirtualListHandle, VirtualListProps>(({ it
       ref={containerRef}
       style={{
         height: containerHeight,
-        overflowY: 'auto',
+        overflowY: 'scroll',
+        overflowX: 'clip',
         position: 'relative',
         willChange: 'transform'
       }}

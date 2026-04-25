@@ -26,6 +26,14 @@ export const DomRow: React.FC<DomRowProps> = ({ item, index, style, measureRef }
         <div className={styles.text} dir={item.lang === 'ar' ? 'rtl' : 'ltr'}>
           {item.text}
         </div>
+        {item.imageUrl && (
+          <img 
+            src={item.imageUrl} 
+            alt="Attached content" 
+            className={styles.attachedImage} 
+            // On load, the ResizeObserver will catch the new height and trigger reflow
+          />
+        )}
       </div>
     </div>
   );
