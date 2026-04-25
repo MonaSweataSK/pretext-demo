@@ -1,0 +1,67 @@
+.container {
+  display: flex;
+  width: 1280px;
+  height: 600px;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.panel {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 640px; /* Exact half width */
+}
+
+.divider {
+  width: 1px;
+  background-color: var(--border-color);
+  height: 100%;
+}
+
+.header {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: rgba(22, 27, 34, 0.8);
+  backdrop-filter: blur(8px);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+}
+
+.badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badgeDom {
+  color: var(--accent-dom);
+  background-color: var(--accent-dom-dim);
+  border: 1px solid var(--accent-dom);
+}
+
+.badgePretext {
+  color: var(--accent-pretext);
+  background-color: var(--accent-pretext-dim);
+  border: 1px solid var(--accent-pretext);
+}
+
+.content {
+  flex: 1;
+  margin-top: 48px;
+  position: relative;
+  height: calc(100% - 48px);
+}

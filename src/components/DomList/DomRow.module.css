@@ -1,0 +1,30 @@
+.rowWrapper {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.row {
+  padding: 16px;
+  /* Ensure padding contributes to height correctly */
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.username {
+  font-weight: bold;
+  color: #58a6ff;
+}
+
+.timestamp {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.text {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}

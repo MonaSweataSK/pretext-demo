@@ -1,0 +1,31 @@
+.counter {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-weight: bold;
+  font-size: 13px;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.green {
+  color: var(--accent-pretext);
+  background-color: var(--accent-pretext-dim);
+  border-color: var(--accent-pretext);
+}
+
+.yellow {
+  color: #d29922;
+  background-color: rgba(210, 153, 34, 0.15);
+  border-color: #d29922;
+}
+
+.red {
+  color: var(--accent-dom);
+  background-color: var(--accent-dom-dim);
+  border-color: var(--accent-dom);
+}
