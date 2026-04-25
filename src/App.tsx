@@ -4,6 +4,7 @@ import { SplitView } from './components/SplitView';
 import { DomList } from './components/DomList/DomList';
 import { PretextList } from './components/PretextList/PretextList';
 import { JumpButton } from './components/JumpButton';
+import { ComparisonModal } from './components/ComparisonModal/ComparisonModal';
 import type { VirtualListHandle } from './components/VirtualList/VirtualList';
 import styles from './App.module.css';
 
@@ -31,6 +32,7 @@ function App() {
   const [domJumpMs, setDomJumpMs] = useState<number | null>(null);
   const [pretextJumpMs, setPretextJumpMs] = useState<number | null>(null);
   const [jumpFlashTimer, setJumpFlashTimer] = useState<number | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   const items = useMemo(() => generateItems(itemCount, showImages), [itemCount, showImages]);
   const domListRef = useRef<VirtualListHandle>(null);
@@ -152,11 +154,13 @@ function App() {
             onJump={handleJump} 
             disabled={showImages}
           />
-          <button className={styles.logButton} onClick={() => console.table(window.__perfLog)}>
-            Log Perf Stats
+          <button className={styles.logButton} onClick={() => setShowModal(true)}>
+            View Final Comparison
           </button>
         </div>
       </header>
+
+      {showModal && <ComparisonModal onClose={() => setShowModal(false)} />}
 
       {domJumpMs !== null && pretextJumpMs !== null && (
         <div className={styles.flashBadgeContainer}>

@@ -93,7 +93,7 @@ export const VirtualList = forwardRef<VirtualListHandle, VirtualListProps>(({ it
       style={{
         height: containerHeight,
         overflowY: 'scroll',
-        overflowX: 'clip',
+        overflowX: 'hidden',
         position: 'relative',
         willChange: 'transform'
       }}
