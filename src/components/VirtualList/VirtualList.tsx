@@ -10,6 +10,7 @@ export interface VirtualListProps {
 
 export interface VirtualListHandle {
   scrollToIndex: (index: number) => void;
+  scrollBy: (amount: number) => void;
 }
 
 export const VirtualList = forwardRef<VirtualListHandle, VirtualListProps>(({ items, getHeight, renderRow, containerHeight }, ref) => {
@@ -44,6 +45,12 @@ export const VirtualList = forwardRef<VirtualListHandle, VirtualListProps>(({ it
         const top = offsets[index] || 0;
         containerRef.current.scrollTop = top;
         setScrollTop(top);
+      }
+    },
+    scrollBy: (amount: number) => {
+      if (containerRef.current) {
+        containerRef.current.scrollTop += amount;
+        setScrollTop(containerRef.current.scrollTop);
       }
     }
   }));

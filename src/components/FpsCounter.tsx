@@ -3,8 +3,26 @@ import styles from './FpsCounter.module.css';
 
 export const FpsCounter: FC = () => {
   const [fps, setFps] = useState(60);
+  const [blockMs, setBlockMs] = useState(0);
   const frames = useRef<number[]>([]);
   const requestRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!window.PerformanceObserver) return;
+    
+    const obs = new PerformanceObserver((list) => {
+      const last = list.getEntries().at(-1);
+      if (last) setBlockMs(Math.round(last.duration));
+    });
+    
+    try {
+      obs.observe({ type: 'longtask', buffered: false });
+    } catch (e) {
+      console.warn("PerformanceObserver for longtask not supported");
+    }
+    
+    return () => obs.disconnect();
+  }, []);
 
   useEffect(() => {
     const loop = () => {
@@ -29,12 +47,12 @@ export const FpsCounter: FC = () => {
   }, []);
 
   let colorClass = styles.green;
-  if (fps < 40) colorClass = styles.red;
-  else if (fps < 55) colorClass = styles.yellow;
+  if (fps < 40 || blockMs > 100) colorClass = styles.red;
+  else if (fps < 55 || blockMs > 50) colorClass = styles.yellow;
 
   return (
     <div className={`${styles.counter} ${colorClass}`}>
-      {fps} fps
+      {fps} fps | last block: {blockMs}ms
     </div>
   );
 };

@@ -66,11 +66,8 @@ function App() {
     } else {
       setIsAutoScrolling(true);
       autoScrollInterval.current = window.setInterval(() => {
-        // Find scroll containers and scroll them by 8px
-        const containers = document.querySelectorAll(`[style*="overflow-y: scroll"]`);
-        containers.forEach(el => {
-          el.scrollTop += 8;
-        });
+        domListRef.current?.scrollBy(8);
+        pretextListRef.current?.scrollBy(8);
       }, 16);
     }
   };

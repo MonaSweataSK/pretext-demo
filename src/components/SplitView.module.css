@@ -5,7 +5,7 @@
   background-color: var(--panel-bg);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow: clip;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 

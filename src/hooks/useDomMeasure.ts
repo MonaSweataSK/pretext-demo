@@ -41,13 +41,6 @@ export function useDomMeasure() {
 
   const measureRef = useCallback((el: HTMLElement | null, index: number) => {
     if (el) {
-      if (window.__perfLog) {
-        window.__perfLog.domMeasure.reflowCount++;
-      }
-      // Initial measure
-      const rect = el.getBoundingClientRect();
-      heightsRef.current.set(index, rect.height);
-      
       el.setAttribute('data-index', index.toString());
       if (observerRef.current) {
         observerRef.current.observe(el);

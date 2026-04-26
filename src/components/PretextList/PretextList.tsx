@@ -24,6 +24,9 @@ export const PretextList = forwardRef<VirtualListHandle, PretextListProps>(({ it
           window.__perfLog.pretext.jumpLatencyMs = performance.now() - start;
         }
       });
+    },
+    scrollBy: (amount: number) => {
+      listRef.current?.scrollBy(amount);
     }
   }));
 

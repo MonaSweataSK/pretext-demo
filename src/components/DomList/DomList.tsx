@@ -17,13 +17,16 @@ export const DomList = forwardRef<VirtualListHandle, DomListProps>(({ items, con
     scrollToIndex: (index: number) => {
       const start = performance.now();
       listRef.current?.scrollToIndex(index);
-      
+
       // Request animation frame to measure when the scroll actually settles
       requestAnimationFrame(() => {
         if (window.__perfLog) {
           window.__perfLog.domMeasure.jumpLatencyMs = performance.now() - start;
         }
       });
+    },
+    scrollBy: (amount: number) => {
+      listRef.current?.scrollBy(amount);
     }
   }));
 
