@@ -26,18 +26,17 @@ if (typeof window !== 'undefined') {
 }
 
 function App() {
-  const [itemCount, setItemCount] = useState(1000);
-  const [showImages, setShowImages] = useState(false);
-  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
+  const [seedVersion, setSeedVersion] = useState(0);
+  const [scrollSpeed, setScrollSpeed] = useState(0);
   const [domJumpMs, setDomJumpMs] = useState<number | null>(null);
   const [pretextJumpMs, setPretextJumpMs] = useState<number | null>(null);
   const [jumpFlashTimer, setJumpFlashTimer] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  const items = useMemo(() => generateItems(itemCount, showImages), [itemCount, showImages]);
+  // We use seedVersion to force generation of a new random batch
+  const items = useMemo(() => generateItems(), [seedVersion]);
   const domListRef = useRef<VirtualListHandle>(null);
   const pretextListRef = useRef<VirtualListHandle>(null);
-  const autoScrollInterval = useRef<number | null>(null);
 
   const handleJump = (index: number) => {
     domListRef.current?.scrollToIndex(index);
@@ -59,24 +58,25 @@ function App() {
     });
   };
 
-  const toggleAutoScroll = () => {
-    if (isAutoScrolling) {
-      if (autoScrollInterval.current) clearInterval(autoScrollInterval.current);
-      setIsAutoScrolling(false);
-    } else {
-      setIsAutoScrolling(true);
-      autoScrollInterval.current = window.setInterval(() => {
-        domListRef.current?.scrollBy(8);
-        pretextListRef.current?.scrollBy(8);
-      }, 16);
-    }
-  };
-
   useEffect(() => {
-    return () => {
-      if (autoScrollInterval.current) clearInterval(autoScrollInterval.current);
+    if (scrollSpeed === 0) return;
+
+    let animationFrameId: number;
+    
+    const autoScroll = () => {
+      domListRef.current?.scrollBy(scrollSpeed);
+      pretextListRef.current?.scrollBy(scrollSpeed);
+      
+      // Auto loop to top logic could go here if we had access to max height,
+      // but for 1000+ items, it runs for a long time anyway.
+      
+      animationFrameId = requestAnimationFrame(autoScroll);
     };
-  }, []);
+
+    animationFrameId = requestAnimationFrame(autoScroll);
+
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [scrollSpeed]);
 
   // PerformanceObserver for DOM scripting and longtasks
   useEffect(() => {
@@ -114,42 +114,32 @@ function App() {
           <p className={styles.subtitle}>DOM getBoundingClientRect vs Pretext Layout Engine</p>
         </div>
         <div className={styles.controls}>
-          {showImages && (
-            <div className={styles.warningBadge} title="Unknown image dimensions invalidate Pretext offsets">
-              ⚠️ Pretext Layout Broken
-            </div>
-          )}
-          
-          <select 
-            className={styles.select} 
-            value={itemCount} 
-            onChange={e => setItemCount(Number(e.target.value))}
-          >
-            <option value={500}>500 items</option>
-            <option value={1000}>1000 items</option>
-            <option value={5000}>5000 items</option>
-          </select>
-
-          <label className={styles.toggleLabel}>
-            <input 
-              type="checkbox" 
-              checked={showImages} 
-              onChange={e => setShowImages(e.target.checked)} 
-            />
-            Show Images
-          </label>
-
-          <button 
-            className={`${styles.logButton} ${isAutoScrolling ? styles.activeButton : ''}`} 
-            onClick={toggleAutoScroll}
-          >
-            {isAutoScrolling ? 'Stop Auto Scroll' : 'Auto Scroll'}
+          <button className={styles.actionButton} onClick={() => setSeedVersion(v => v + 1)}>
+            Load Random Batch
           </button>
 
+          <div className={styles.speedGroup}>
+            <button 
+              className={`${styles.speedButton} ${scrollSpeed === 0 ? styles.activeSpeed : ''}`} 
+              onClick={() => setScrollSpeed(0)}
+            >Stop</button>
+            <button 
+              className={`${styles.speedButton} ${scrollSpeed === 2 ? styles.activeSpeed : ''}`} 
+              onClick={() => setScrollSpeed(2)}
+            >1x Speed</button>
+            <button 
+              className={`${styles.speedButton} ${scrollSpeed === 8 ? styles.activeSpeed : ''}`} 
+              onClick={() => setScrollSpeed(8)}
+            >5x Speed</button>
+            <button 
+              className={`${styles.speedButton} ${scrollSpeed === 20 ? styles.activeSpeed : ''}`} 
+              onClick={() => setScrollSpeed(20)}
+            >Max Speed</button>
+          </div>
+
           <JumpButton 
-            targetIndex={Math.floor(itemCount * 0.75)} 
+            targetIndex={Math.floor(items.length * 0.75)} 
             onJump={handleJump} 
-            disabled={showImages}
           />
           <button className={styles.logButton} onClick={() => setShowModal(true)}>
             View Final Comparison

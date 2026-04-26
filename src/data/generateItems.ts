@@ -5,7 +5,6 @@ export interface Item {
   timestamp: string;
   hasEmoji: boolean;
   lang: 'en' | 'ja' | 'ar';
-  imageUrl?: string;
 }
 
 // Simple LCG PRNG for determinism
@@ -15,44 +14,20 @@ function random() {
   return seed / 4294967296;
 }
 
-const LOREM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-const EN_WORDS = LOREM.split(' ');
-
-const JA_SAMPLES = [
-  "昨日、東京タワーに行きました。景色がとてもきれいでした。",
-  "新しい技術を学ぶのはいつも楽しいですね。",
-  "こんにちは、元気ですか？明日の会議の準備はできましたか？",
-  "ReactとViteを使ったプロジェクトのセットアップが完了しました。"
-];
-
-const AR_SAMPLES = [
-  "مرحبا، كيف حالك اليوم؟ أتمنى أن تكون بخير.",
-  "تطوير الويب أصبح أكثر تعقيداً ولكن أكثر إثارة للاهتمام.",
-  "هذا نص تجريبي باللغة العربية لاختبار عرض الخطوط.",
-  "التعلم الآلي والذكاء الاصطناعي هما مستقبل التكنولوجيا."
-];
+const WORDS = ["performance", "bottleneck", "virtualization", "react", "pretext", "layout", "thrashing", "DOM", "CSS", "smooth", "jank", "main-thread", "reflow"];
 
 const USERNAMES = ['alex_dev', 'sarah_codes', 'tech_guru', 'web_master', 'react_fan', 'perf_nerd'];
 const EMOJIS = ['🚀', '🔥', '💻', '✨', '🤔', '🎉', '💡', '🐛', '🔨', '⚡️'];
 
-function generateRandomText(lang: 'en' | 'ja' | 'ar'): string {
-  if (lang === 'ja') {
-    return JA_SAMPLES[Math.floor(random() * JA_SAMPLES.length)];
-  }
-  if (lang === 'ar') {
-    return AR_SAMPLES[Math.floor(random() * AR_SAMPLES.length)];
-  }
-  
-  // English: random length between 10 and 80 words (roughly 50 to 600 chars)
-  const wordCount = Math.floor(random() * 70) + 10;
-  let text = [];
-  for (let i = 0; i < wordCount; i++) {
-    text.push(EN_WORDS[Math.floor(random() * EN_WORDS.length)]);
-  }
-  return text.join(' ');
+function generateRandomText(): string {
+  const wordCount = Math.floor(random() * 40) + 5; // 5 to 45 words
+  return Array.from({ length: wordCount }, () => WORDS[Math.floor(random() * WORDS.length)]).join(" ");
 }
 
-export function generateItems(count: number = 1000, includeImages: boolean = false): Item[] {
+export function generateItems(count?: number): Item[] {
+  // If count is not provided, generate a random count between 500 and 1500
+  const actualCount = count || Math.floor(Math.random() * 1000) + 500;
+  
   // Reset seed so multiple calls return the same data
   seed = 12345;
   const items: Item[] = [];
@@ -60,14 +35,14 @@ export function generateItems(count: number = 1000, includeImages: boolean = fal
   // Generate baseline date: Jan 1, 2024
   let currentTime = 1704067200000;
 
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < actualCount; i++) {
     const langRoll = random();
     let lang: 'en' | 'ja' | 'ar' = 'en';
     if (langRoll > 0.9) lang = 'ar';
     else if (langRoll > 0.8) lang = 'ja';
 
     const hasEmoji = random() > 0.7; // ~30% emoji
-    let text = generateRandomText(lang);
+    let text = generateRandomText();
     
     if (hasEmoji) {
       const emojiCount = Math.floor(random() * 3) + 1;
@@ -84,20 +59,13 @@ export function generateItems(count: number = 1000, includeImages: boolean = fal
     const date = new Date(currentTime);
     const timestamp = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 
-    let imageUrl;
-    if (includeImages && random() > 0.5) {
-      // Add a random image from picsum
-      imageUrl = `https://picsum.photos/seed/${seed}/400/${Math.floor(random() * 200) + 200}`;
-    }
-
     items.push({
       id: `item-${i}`,
       text,
       username: USERNAMES[Math.floor(random() * USERNAMES.length)],
       timestamp,
       hasEmoji,
-      lang,
-      imageUrl
+      lang
     });
   }
 
