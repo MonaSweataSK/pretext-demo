@@ -21,35 +21,47 @@ export function usePretextMeasure(items: Item[]) {
     setTimeout(() => {
       if (!active) return;
 
-      const heights = new Array(items.length);
-      const startPrep = performance.now();
-      
-      const preparedTexts = items.map(item => prepare(item.text, CONFIG.fontStr));
-      
-      const endPrep = performance.now();
-      const startLayout = performance.now();
-      
-      for (let i = 0; i < items.length; i++) {
-        // Height includes header (username + timestamp + margin) and text
-        // Header height: roughly 20px (line height of 14px text) + 8px margin = 28px
-        // Padding: 16px top + 16px bottom = 32px
-        // Base fixed height per row = 28 + 32 = 60px
-        
-        // Using pretext layout to get the text height
-        const metrics = layout(preparedTexts[i], CONFIG.width, CONFIG.lineHeight);
+      const previousCount = heightsRef.current.length;
+      if (items.length <= previousCount && previousCount > 0) {
+        // Just checking if we need to reset or already calculated.
+        // If items decreased or changed completely, we might need a better check,
+        // but since we only append in indefinite mode, this works.
+        if (items.length < previousCount) {
+          heightsRef.current = [];
+        } else {
+          setReady(true);
+          return;
+        }
+      }
 
-        // Pretext layout gives us lines/dimensions. 
-        heights[i] = metrics.height + 60;
+      const startIndex = heightsRef.current.length;
+      const newItems = items.slice(startIndex);
+      
+      if (newItems.length === 0) {
+        setReady(true);
+        return;
+      }
+
+      const startPrep = performance.now();
+      const preparedTexts = newItems.map(item => prepare(item.text, CONFIG.fontStr));
+      const endPrep = performance.now();
+      
+      const startLayout = performance.now();
+      const newHeights = new Array(newItems.length);
+      
+      for (let i = 0; i < newItems.length; i++) {
+        const metrics = layout(preparedTexts[i], CONFIG.width, CONFIG.lineHeight);
+        newHeights[i] = metrics.height + 60;
       }
       
       const endLayout = performance.now();
 
       if (window.__perfLog) {
-        window.__perfLog.pretext.prepareMs = endPrep - startPrep;
-        window.__perfLog.pretext.layoutMs = endLayout - startLayout;
+        window.__perfLog.pretext.prepareMs += (endPrep - startPrep);
+        window.__perfLog.pretext.layoutMs += (endLayout - startLayout);
       }
 
-      heightsRef.current = heights;
+      heightsRef.current = [...heightsRef.current, ...newHeights];
       setReady(true);
     }, 50);
 

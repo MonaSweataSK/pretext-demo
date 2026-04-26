@@ -1,5 +1,5 @@
-import { useMemo, useRef, useEffect, useState } from 'react';
-import { generateItems } from './data/generateItems';
+import { useRef, useEffect, useState } from 'react';
+import { generateItems, type Item } from './data/generateItems';
 import { SplitView } from './components/SplitView';
 import { DomList } from './components/DomList/DomList';
 import { PretextList } from './components/PretextList/PretextList';
@@ -26,17 +26,37 @@ if (typeof window !== 'undefined') {
 }
 
 function App() {
-  const [seedVersion, setSeedVersion] = useState(0);
-  const [scrollSpeed, setScrollSpeed] = useState(0);
+  const [countMode, setCountMode] = useState<string>('1000');
+  const [customCount, setCustomCount] = useState<number>(1000);
+  const [items, setItems] = useState<Item[]>(() => generateItems(1000));
+  
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
+  const [autoScrollSpeed, setAutoScrollSpeed] = useState<number>(1);
+  
   const [domJumpMs, setDomJumpMs] = useState<number | null>(null);
   const [pretextJumpMs, setPretextJumpMs] = useState<number | null>(null);
   const [jumpFlashTimer, setJumpFlashTimer] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
 
-  // We use seedVersion to force generation of a new random batch
-  const items = useMemo(() => generateItems(), [seedVersion]);
   const domListRef = useRef<VirtualListHandle>(null);
   const pretextListRef = useRef<VirtualListHandle>(null);
+  const autoScrollInterval = useRef<number | null>(null);
+  const itemsRef = useRef(items);
+  const isAppending = useRef(false);
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  useEffect(() => {
+    if (countMode === 'custom') {
+      setItems(generateItems(customCount));
+    } else if (countMode === 'indefinite') {
+      setItems(generateItems(500));
+    } else {
+      setItems(generateItems(Number(countMode)));
+    }
+  }, [countMode, customCount]);
 
   const handleJump = (index: number) => {
     domListRef.current?.scrollToIndex(index);
@@ -58,25 +78,53 @@ function App() {
     });
   };
 
+  const toggleAutoScroll = () => {
+    if (isAutoScrolling) {
+      if (autoScrollInterval.current) clearInterval(autoScrollInterval.current);
+      setIsAutoScrolling(false);
+    } else {
+      setIsAutoScrolling(true);
+      autoScrollInterval.current = window.setInterval(() => {
+        domListRef.current?.scrollBy(8 * autoScrollSpeed);
+        pretextListRef.current?.scrollBy(8 * autoScrollSpeed);
+
+        // Check for indefinite append or infinite loop
+        if (domListRef.current) {
+          const info = domListRef.current.getScrollInfo();
+          if (info.top + 1000 >= info.max) {
+            if (countMode === 'indefinite') {
+              if (!isAppending.current) {
+                isAppending.current = true;
+                const currentLen = itemsRef.current.length;
+                const newItems = generateItems(100, currentLen);
+                setItems(prev => [...prev, ...newItems]);
+                setTimeout(() => { isAppending.current = false; }, 100);
+              }
+            } else {
+              // Standard loop back to top
+              domListRef.current.scrollToIndex(0);
+              pretextListRef.current?.scrollToIndex(0);
+            }
+          }
+        }
+      }, 16);
+    }
+  };
+
+  // Keep auto-scroll speed updated
   useEffect(() => {
-    if (scrollSpeed === 0) return;
+    if (isAutoScrolling) {
+      if (autoScrollInterval.current) clearInterval(autoScrollInterval.current);
+      setIsAutoScrolling(false);
+      toggleAutoScroll(); // restart with new speed
+    }
+  }, [autoScrollSpeed]);
 
-    let animationFrameId: number;
-    
-    const autoScroll = () => {
-      domListRef.current?.scrollBy(scrollSpeed);
-      pretextListRef.current?.scrollBy(scrollSpeed);
-      
-      // Auto loop to top logic could go here if we had access to max height,
-      // but for 1000+ items, it runs for a long time anyway.
-      
-      animationFrameId = requestAnimationFrame(autoScroll);
+  useEffect(() => {
+    return () => {
+      if (autoScrollInterval.current) clearInterval(autoScrollInterval.current);
     };
-
-    animationFrameId = requestAnimationFrame(autoScroll);
-
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [scrollSpeed]);
+  }, []);
 
   // PerformanceObserver for DOM scripting and longtasks
   useEffect(() => {
@@ -114,31 +162,50 @@ function App() {
           <p className={styles.subtitle}>DOM getBoundingClientRect vs Pretext Layout Engine</p>
         </div>
         <div className={styles.controls}>
-          <button className={styles.actionButton} onClick={() => setSeedVersion(v => v + 1)}>
-            Load Random Batch
-          </button>
+          <select 
+            className={styles.select} 
+            value={countMode} 
+            onChange={e => setCountMode(e.target.value)}
+          >
+            <option value="500">500 items</option>
+            <option value="1000">1000 items</option>
+            <option value="5000">5000 items</option>
+            <option value="custom">Custom...</option>
+            <option value="indefinite">Indefinite (Infinite Scroll)</option>
+          </select>
 
-          <div className={styles.speedGroup}>
-            <button 
-              className={`${styles.speedButton} ${scrollSpeed === 0 ? styles.activeSpeed : ''}`} 
-              onClick={() => setScrollSpeed(0)}
-            >Stop</button>
-            <button 
-              className={`${styles.speedButton} ${scrollSpeed === 2 ? styles.activeSpeed : ''}`} 
-              onClick={() => setScrollSpeed(2)}
-            >1x Speed</button>
-            <button 
-              className={`${styles.speedButton} ${scrollSpeed === 8 ? styles.activeSpeed : ''}`} 
-              onClick={() => setScrollSpeed(8)}
-            >5x Speed</button>
-            <button 
-              className={`${styles.speedButton} ${scrollSpeed === 20 ? styles.activeSpeed : ''}`} 
-              onClick={() => setScrollSpeed(20)}
-            >Max Speed</button>
+          {countMode === 'custom' && (
+            <input 
+              type="number" 
+              className={styles.input} 
+              value={customCount} 
+              onChange={e => setCustomCount(Math.max(1, Number(e.target.value)))}
+              placeholder="e.g. 2500"
+            />
+          )}
+
+          <div className={styles.speedControls}>
+            <span className={styles.speedLabel}>Speed:</span>
+            {[1, 2, 5].map(speed => (
+              <button 
+                key={speed}
+                className={`${styles.speedButton} ${autoScrollSpeed === speed ? styles.activeButton : ''}`}
+                onClick={() => setAutoScrollSpeed(speed)}
+              >
+                {speed}x
+              </button>
+            ))}
           </div>
 
+          <button 
+            className={`${styles.logButton} ${isAutoScrolling ? styles.activeButton : ''}`} 
+            onClick={toggleAutoScroll}
+          >
+            {isAutoScrolling ? 'Stop Auto Scroll' : 'Auto Scroll'}
+          </button>
+
           <JumpButton 
-            targetIndex={Math.floor(items.length * 0.75)} 
+            maxIndex={items.length} 
             onJump={handleJump} 
           />
           <button className={styles.logButton} onClick={() => setShowModal(true)}>

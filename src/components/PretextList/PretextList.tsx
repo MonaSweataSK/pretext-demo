@@ -27,6 +27,9 @@ export const PretextList = forwardRef<VirtualListHandle, PretextListProps>(({ it
     },
     scrollBy: (amount: number) => {
       listRef.current?.scrollBy(amount);
+    },
+    getScrollInfo: () => {
+      return listRef.current?.getScrollInfo() || { top: 0, max: 0 };
     }
   }));
 
